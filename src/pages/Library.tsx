@@ -86,13 +86,19 @@ export default function Library() {
 
   useEffect(() => {
     const q = query(collection(db, 'media'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const mediaItems = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as MediaItem[];
-      setItems(mediaItems);
-    });
+    const unsubscribe = onSnapshot(
+      q, 
+      (snapshot) => {
+        const mediaItems = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as MediaItem[];
+        setItems(mediaItems);
+      },
+      (error) => {
+        console.error("FIREBASE ERROR en onSnapshot (probablemente reglas de seguridad): ", error);
+      }
+    );
     return () => unsubscribe();
   }, []);
 
