@@ -23,6 +23,7 @@ interface MediaCardProps {
   item: MediaItem;
   onRemove: (id: string) => void;
   onStatusUpdate: (id: string, status: WatchStatus) => void;
+  onClick: () => void;
 }
 
 const statusBadgeConfig = {
@@ -31,7 +32,7 @@ const statusBadgeConfig = {
   completed: { label: 'Completado', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)' },
 } as const;
 
-export default function MediaCard({ item, onRemove, onStatusUpdate }: MediaCardProps) {
+export default function MediaCard({ item, onRemove, onStatusUpdate, onClick }: MediaCardProps) {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -56,9 +57,10 @@ export default function MediaCard({ item, onRemove, onStatusUpdate }: MediaCardP
       style={{ height: '100%' }}
     >
       <Box 
+        onClick={onClick}
         sx={{ 
           position: 'relative', 
-          width: '100%', 
+          cursor: 'pointer', 
           aspectRatio: '2/3', 
           // Fallback for environments where aspect-ratio might not trigger height correctly
           minHeight: { xs: '200px', sm: '250px' },
@@ -205,6 +207,10 @@ export default function MediaCard({ item, onRemove, onStatusUpdate }: MediaCardP
         <MenuItem onClick={() => { onStatusUpdate(item.id, 'completed'); handleClose(); }} sx={{ py: 1.5 }}>
           <ListItemIcon><CompletedIcon fontSize="small" sx={{ color: 'success.main' }} /></ListItemIcon>
           <ListItemText slotProps={{ primary: { variant: 'body2', sx: { fontWeight: 600 } } }}>Completado</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => { onClick(); handleClose(); }} sx={{ py: 1.5 }}>
+          <ListItemIcon><PendingIcon fontSize="small" color="primary" /></ListItemIcon>
+          <ListItemText slotProps={{ primary: { variant: 'body2', sx: { fontWeight: 600 } } }}>Editar</ListItemText>
         </MenuItem>
         <Box sx={{ my: 0.5, height: '1px', bgcolor: 'rgba(255,255,255,0.1)' }} />
         <MenuItem onClick={() => { onRemove(item.id); handleClose(); }} sx={{ color: 'error.main', py: 1.5 }}>

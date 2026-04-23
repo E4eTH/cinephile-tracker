@@ -42,7 +42,7 @@ const INITIAL_DATA: MediaItem[] = [
     status: 'watching',
     rating: 9.5,
     imageUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1000&auto=format&fit=crop',
-    description: 'Paul Atreides unites with Chani and the Fremen while on a warpath of revenge against the conspirators who destroyed his family.',
+    comment: 'Paul Atreides unites with Chani and the Fremen while on a warpath of revenge against the conspirators who destroyed his family.',
     createdAt: Date.now()
   },
   {
@@ -52,7 +52,7 @@ const INITIAL_DATA: MediaItem[] = [
     status: 'watching',
     rating: 9.0,
     imageUrl: 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=1000&auto=format&fit=crop',
-    description: 'A young chef from the fine dining world comes home to Chicago to run his family sandwich shop.',
+    comment: 'A young chef from the fine dining world comes home to Chicago to run his family sandwich shop.',
     season: 2,
     episode: 8,
     createdAt: Date.now() - 1000
@@ -64,7 +64,7 @@ const INITIAL_DATA: MediaItem[] = [
     status: 'pending',
     rating: 8.5,
     imageUrl: 'https://images.unsplash.com/photo-1542204172-3c3f25de8155?q=80&w=1000&auto=format&fit=crop',
-    description: 'When a mysterious European ship is found marooned in a nearby fishing village, Lord Yoshii Toranaga discovers secrets that could tip the scales of power.',
+    comment: 'When a mysterious European ship is found marooned in a nearby fishing village, Lord Yoshii Toranaga discovers secrets that could tip the scales of power.',
     season: 1,
     episode: 1,
     createdAt: Date.now() - 2000
@@ -79,6 +79,7 @@ export default function Library() {
   const [mediaTypeFilter, setMediaTypeFilter] = useState(0); // 0: All, 1: Movies, 2: Series
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<MediaItem | null>(null);
   
   const muiTheme = useMuiTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
@@ -88,10 +89,14 @@ export default function Library() {
     const unsubscribe = onSnapshot(
       q, 
       (snapshot) => {
-        const mediaItems = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as MediaItem[];
+        const mediaItems = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            comment: data.comment || (data as any).description || ''
+          };
+        }) as MediaItem[];
         setItems(mediaItems);
       },
       (error) => {
@@ -101,15 +106,23 @@ export default function Library() {
     return () => unsubscribe();
   }, []);
 
-  const addItem = async (newItem: Omit<MediaItem, 'id' | 'createdAt'>) => {
+  const handleSave = async (newItem: Omit<MediaItem, 'id' | 'createdAt'> | MediaItem) => {
     try {
-      await addDoc(collection(db, 'media'), {
-        ...newItem,
-        createdAt: Date.now()
-      });
+      if ('id' in newItem) {
+        // Update existing item
+        const { id, ...data } = newItem;
+        await updateDoc(doc(db, 'media', id), data);
+      } else {
+        // Add new item
+        await addDoc(collection(db, 'media'), {
+          ...newItem,
+          createdAt: Date.now()
+        });
+      }
       setIsModalOpen(false);
+      setEditingItem(null);
     } catch (error) {
-      console.error("Error adding document: ", error);
+      console.error("Error saving document: ", error);
     }
   };
 
@@ -270,7 +283,10 @@ export default function Library() {
             <Button 
               variant="contained" 
               startIcon={<AddIcon />}
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => {
+                setEditingItem(null);
+                setIsModalOpen(true);
+              }}
             >
               {!isMobile && "Agregar Nueva"}
             </Button>
@@ -331,6 +347,10 @@ export default function Library() {
                         item={item} 
                         onRemove={removeItem} 
                         onStatusUpdate={updateStatus} 
+                        onClick={() => {
+                          setEditingItem(item);
+                          setIsModalOpen(true);
+                        }}
                       />
                     </Grid>
                   ))}
@@ -353,8 +373,12 @@ export default function Library() {
 
       <AddMediaModal 
         open={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onAdd={addItem} 
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingItem(null);
+        }} 
+        onSave={handleSave}
+        initialData={editingItem}
       />
     </Box>
   );

@@ -8,7 +8,7 @@ export interface MediaItem {
   status: WatchStatus;
   rating?: number;
   imageUrl?: string;
-  description?: string;
+  comment?: string;
   season?: number;
   episode?: number;
   createdAt: number;
