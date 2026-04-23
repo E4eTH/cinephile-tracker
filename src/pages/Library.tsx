@@ -31,6 +31,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { MediaItem, WatchStatus } from '../types';
 import AddMediaModal from '../components/AddMediaModal';
 import MediaCard from '../components/MediaCard';
+import { db } from '../firebase';
+import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, query, orderBy } from 'firebase/firestore';
+
 
 const INITIAL_DATA: MediaItem[] = [
   {
@@ -71,10 +74,7 @@ const INITIAL_DATA: MediaItem[] = [
 
 export default function Library() {
   const navigate = useNavigate();
-  const [items, setItems] = useState<MediaItem[]>(() => {
-    const saved = localStorage.getItem('cinephile_items');
-    return saved ? JSON.parse(saved) : INITIAL_DATA;
-  });
+  const [items, setItems] = useState<MediaItem[]>([]);
   
   const [activeView, setActiveView] = useState<'all' | WatchStatus>('all');
   const [mediaTypeFilter, setMediaTypeFilter] = useState(0); // 0: All, 1: Movies, 2: Series
@@ -85,25 +85,43 @@ export default function Library() {
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
 
   useEffect(() => {
-    localStorage.setItem('cinephile_items', JSON.stringify(items));
-  }, [items]);
+    const q = query(collection(db, 'media'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const mediaItems = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as MediaItem[];
+      setItems(mediaItems);
+    });
+    return () => unsubscribe();
+  }, []);
 
-  const addItem = (newItem: Omit<MediaItem, 'id' | 'createdAt'>) => {
-    const item: MediaItem = {
-      ...newItem,
-      id: Math.random().toString(36).substr(2, 9),
-      createdAt: Date.now()
-    };
-    setItems([item, ...items]);
-    setIsModalOpen(false);
+  const addItem = async (newItem: Omit<MediaItem, 'id' | 'createdAt'>) => {
+    try {
+      await addDoc(collection(db, 'media'), {
+        ...newItem,
+        createdAt: Date.now()
+      });
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Error adding document: ", error);
+    }
   };
 
-  const removeItem = (id: string) => {
-    setItems(items.filter(i => i.id !== id));
+  const removeItem = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'media', id));
+    } catch (error) {
+      console.error("Error removing document: ", error);
+    }
   };
 
-  const updateStatus = (id: string, status: WatchStatus) => {
-    setItems(items.map(i => i.id === id ? { ...i, status } : i));
+  const updateStatus = async (id: string, status: WatchStatus) => {
+    try {
+      await updateDoc(doc(db, 'media', id), { status });
+    } catch (error) {
+      console.error("Error updating document: ", error);
+    }
   };
 
   const filteredItems = items.filter(item => {
