@@ -23,7 +23,6 @@ import {
   Visibility as WatchingIcon,
   Bookmark as WishlistIcon,
   CheckCircle as CompletedIcon,
-  AutoAwesome as RecentIcon,
   Home as HomeIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -267,16 +266,7 @@ export default function Library() {
           </Box>
 
           <Box sx={{ display: 'flex', gap: 2 }}>
-            {!isMobile && (
-              <Button 
-                variant="outlined" 
-                size="small" 
-                startIcon={<RecentIcon />} 
-                sx={{ borderColor: 'rgba(255,255,255,0.1)', color: 'text.primary' }}
-              >
-                Recientes
-              </Button>
-            )}
+
             <Button 
               variant="contained" 
               startIcon={<AddIcon />}
