@@ -29,10 +29,19 @@ interface AddMediaModalProps {
 }
 
 export default function AddMediaModal({ open, onClose, onAdd }: AddMediaModalProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    type: MediaType;
+    status: WatchStatus;
+    rating: number;
+    description: string;
+    imageUrl: string;
+    season: number | string;
+    episode: number | string;
+  }>({
     title: '',
-    type: 'movie' as MediaType,
-    status: 'pending' as WatchStatus,
+    type: 'movie',
+    status: 'pending',
     rating: 7,
     description: '',
     imageUrl: '',
@@ -44,6 +53,24 @@ export default function AddMediaModal({ open, onClose, onAdd }: AddMediaModalPro
   const [options, setOptions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Reset form when modal opens
+  React.useEffect(() => {
+    if (open) {
+      setFormData({
+        title: '',
+        type: 'movie',
+        status: 'pending',
+        rating: 7,
+        description: '',
+        imageUrl: '',
+        season: 1,
+        episode: 1
+      });
+      setSearchQuery('');
+      setOptions([]);
+    }
+  }, [open]);
 
   React.useEffect(() => {
     let active = true;
@@ -99,13 +126,18 @@ export default function AddMediaModal({ open, onClose, onAdd }: AddMediaModalPro
     if (!formData.title) return;
     
     // Prepare data to send
-    const itemToAdd = { ...formData };
+    const itemToAdd = { 
+      ...formData,
+      season: formData.season === '' ? 1 : Number(formData.season),
+      episode: formData.episode === '' ? 1 : Number(formData.episode)
+    };
+    
     if (formData.type === 'movie') {
       delete (itemToAdd as any).season;
       delete (itemToAdd as any).episode;
     }
 
-    onAdd(itemToAdd);
+    onAdd(itemToAdd as any);
     setFormData({
       title: '',
       type: 'movie',
@@ -215,7 +247,7 @@ export default function AddMediaModal({ open, onClose, onAdd }: AddMediaModalPro
                     fullWidth
                     type="number"
                     value={formData.season}
-                    onChange={(e) => setFormData({ ...formData, season: parseInt(e.target.value) || 0 })}
+                    onChange={(e) => setFormData({ ...formData, season: e.target.value })}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
@@ -224,7 +256,7 @@ export default function AddMediaModal({ open, onClose, onAdd }: AddMediaModalPro
                     fullWidth
                     type="number"
                     value={formData.episode}
-                    onChange={(e) => setFormData({ ...formData, episode: parseInt(e.target.value) || 0 })}
+                    onChange={(e) => setFormData({ ...formData, episode: e.target.value })}
                   />
                 </Grid>
               </>
