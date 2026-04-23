@@ -123,9 +123,9 @@ export default function AddMediaModal({ open, onClose, onAdd }: AddMediaModalPro
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <form onSubmit={handleSubmit}>
-        <DialogTitle sx={{ pb: 1 }}>Agregar a mi lista</DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <Grid container spacing={3}>
+        <DialogTitle sx={{ pb: 0.5 }}>Agregar a mi lista</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2}>
             <Grid size={{ xs: 12 }}>
               <ToggleButtonGroup
                 value={formData.type}
@@ -246,7 +246,7 @@ export default function AddMediaModal({ open, onClose, onAdd }: AddMediaModalPro
             </Grid>
  
             <Grid size={{ xs: 12, sm: 6 }}>
-              <Typography gutterBottom variant="caption" color="text.secondary">
+              <Typography variant="caption" color="text.secondary">
                 Calificación inicial ({formData.rating}/10)
               </Typography>
               <Slider
@@ -265,14 +265,14 @@ export default function AddMediaModal({ open, onClose, onAdd }: AddMediaModalPro
                 label="Descripción"
                 fullWidth
                 multiline
-                rows={3}
+                rows={2}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               />
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={onClose} color="inherit">Cancelar</Button>
           <Button type="submit" variant="contained" disabled={!formData.title}>
             Agregar
