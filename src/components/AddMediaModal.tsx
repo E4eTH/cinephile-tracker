@@ -33,20 +33,40 @@ export default function AddMediaModal({ open, onClose, onAdd }: AddMediaModalPro
     status: 'pending' as WatchStatus,
     rating: 7,
     description: '',
-    imageUrl: ''
+    imageUrl: '',
+    season: 1,
+    episode: 1
   });
+
+  const handleTypeChange = (newType: MediaType) => {
+    let newStatus = formData.status;
+    if (newType === 'movie' && formData.status === 'watching') {
+      newStatus = 'pending';
+    }
+    setFormData({ ...formData, type: newType, status: newStatus });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title) return;
-    onAdd(formData);
+    
+    // Prepare data to send
+    const itemToAdd = { ...formData };
+    if (formData.type === 'movie') {
+      delete (itemToAdd as any).season;
+      delete (itemToAdd as any).episode;
+    }
+
+    onAdd(itemToAdd);
     setFormData({
       title: '',
       type: 'movie',
       status: 'pending',
       rating: 7,
       description: '',
-      imageUrl: ''
+      imageUrl: '',
+      season: 1,
+      episode: 1
     });
   };
 
@@ -60,7 +80,7 @@ export default function AddMediaModal({ open, onClose, onAdd }: AddMediaModalPro
               <ToggleButtonGroup
                 value={formData.type}
                 exclusive
-                onChange={(_, val) => val && setFormData({ ...formData, type: val })}
+                onChange={(_, val) => val && handleTypeChange(val as MediaType)}
                 fullWidth
                 size="small"
                 color="primary"
@@ -83,6 +103,29 @@ export default function AddMediaModal({ open, onClose, onAdd }: AddMediaModalPro
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               />
             </Grid>
+
+            {formData.type === 'series' && (
+              <>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    label="Temporada"
+                    fullWidth
+                    type="number"
+                    value={formData.season}
+                    onChange={(e) => setFormData({ ...formData, season: parseInt(e.target.value) || 0 })}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    label="Episodio"
+                    fullWidth
+                    type="number"
+                    value={formData.episode}
+                    onChange={(e) => setFormData({ ...formData, episode: parseInt(e.target.value) || 0 })}
+                  />
+                </Grid>
+              </>
+            )}
  
             <Grid size={{ xs: 12, sm: 6 }}>
               <FormControl fullWidth>
@@ -93,7 +136,7 @@ export default function AddMediaModal({ open, onClose, onAdd }: AddMediaModalPro
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as WatchStatus })}
                 >
                   <MenuItem value="pending">Por ver</MenuItem>
-                  <MenuItem value="watching">Viendo</MenuItem>
+                  {formData.type === 'series' && <MenuItem value="watching">Viendo</MenuItem>}
                   <MenuItem value="completed">Visto</MenuItem>
                 </Select>
               </FormControl>

@@ -9,5 +9,7 @@ export interface MediaItem {
   rating?: number;
   imageUrl?: string;
   description?: string;
+  season?: number;
+  episode?: number;
   createdAt: number;
 }

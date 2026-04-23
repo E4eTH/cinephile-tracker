@@ -51,6 +51,8 @@ const INITIAL_DATA: MediaItem[] = [
     rating: 9.0,
     imageUrl: 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=1000&auto=format&fit=crop',
     description: 'A young chef from the fine dining world comes home to Chicago to run his family sandwich shop.',
+    season: 2,
+    episode: 8,
     createdAt: Date.now() - 1000
   },
   {
@@ -61,6 +63,8 @@ const INITIAL_DATA: MediaItem[] = [
     rating: 8.5,
     imageUrl: 'https://images.unsplash.com/photo-1542204172-3c3f25de8155?q=80&w=1000&auto=format&fit=crop',
     description: 'When a mysterious European ship is found marooned in a nearby fishing village, Lord Yoshii Toranaga discovers secrets that could tip the scales of power.',
+    season: 1,
+    episode: 1,
     createdAt: Date.now() - 2000
   }
 ];

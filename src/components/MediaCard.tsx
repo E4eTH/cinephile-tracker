@@ -154,10 +154,18 @@ export default function MediaCard({ item, onRemove, onStatusUpdate }: MediaCardP
           >
             {item.title}
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>
               {item.type === 'movie' ? 'Película' : 'Serie'}
             </Typography>
+            {item.type === 'series' && item.season !== undefined && (
+              <>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)' }}>•</Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
+                  T{item.season} E{item.episode}
+                </Typography>
+              </>
+            )}
             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)' }}>•</Typography>
             <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 600 }}>
               {item.rating}/10
@@ -184,10 +192,12 @@ export default function MediaCard({ item, onRemove, onStatusUpdate }: MediaCardP
           }
         }}
       >
-        <MenuItem onClick={() => { onStatusUpdate(item.id, 'watching'); handleClose(); }} sx={{ py: 1.5 }}>
-          <ListItemIcon><WatchingIcon fontSize="small" color="primary" /></ListItemIcon>
-          <ListItemText slotProps={{ primary: { variant: 'body2', sx: { fontWeight: 600 } } }}>Viendo</ListItemText>
-        </MenuItem>
+        {item.type === 'series' && (
+          <MenuItem onClick={() => { onStatusUpdate(item.id, 'watching'); handleClose(); }} sx={{ py: 1.5 }}>
+            <ListItemIcon><WatchingIcon fontSize="small" color="primary" /></ListItemIcon>
+            <ListItemText slotProps={{ primary: { variant: 'body2', sx: { fontWeight: 600 } } }}>Viendo</ListItemText>
+          </MenuItem>
+        )}
         <MenuItem onClick={() => { onStatusUpdate(item.id, 'pending'); handleClose(); }} sx={{ py: 1.5 }}>
           <ListItemIcon><PendingIcon fontSize="small" sx={{ color: 'warning.main' }} /></ListItemIcon>
           <ListItemText slotProps={{ primary: { variant: 'body2', sx: { fontWeight: 600 } } }}>Pendiente</ListItemText>
