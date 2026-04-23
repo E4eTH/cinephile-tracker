@@ -128,8 +128,8 @@ export default function AddMediaModal({ open, onClose, onAdd }: AddMediaModalPro
     // Prepare data to send
     const itemToAdd = { 
       ...formData,
-      season: formData.season === '' ? 1 : Number(formData.season),
-      episode: formData.episode === '' ? 1 : Number(formData.episode)
+      season: Math.max(1, formData.season === '' ? 1 : Number(formData.season)),
+      episode: Math.max(1, formData.episode === '' ? 1 : Number(formData.episode))
     };
     
     if (formData.type === 'movie') {
@@ -247,7 +247,13 @@ export default function AddMediaModal({ open, onClose, onAdd }: AddMediaModalPro
                     fullWidth
                     type="number"
                     value={formData.season}
-                    onChange={(e) => setFormData({ ...formData, season: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '' || Number(val) >= 1) {
+                        setFormData({ ...formData, season: val });
+                      }
+                    }}
+                    slotProps={{ htmlInput: { min: 1 } }}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
@@ -256,7 +262,13 @@ export default function AddMediaModal({ open, onClose, onAdd }: AddMediaModalPro
                     fullWidth
                     type="number"
                     value={formData.episode}
-                    onChange={(e) => setFormData({ ...formData, episode: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '' || Number(val) >= 1) {
+                        setFormData({ ...formData, episode: val });
+                      }
+                    }}
+                    slotProps={{ htmlInput: { min: 1 } }}
                   />
                 </Grid>
               </>
