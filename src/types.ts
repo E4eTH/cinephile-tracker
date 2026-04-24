@@ -3,12 +3,13 @@ export type MediaType = 'movie' | 'series';
 
 export interface MediaItem {
   id: string;
+  tmdbId?: number;
   title: string;
   type: MediaType;
   status: WatchStatus;
   rating?: number;
   imageUrl?: string;
-  description?: string;
+  comment?: string;
   season?: number;
   episode?: number;
   createdAt: number;
