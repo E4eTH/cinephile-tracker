@@ -29,6 +29,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { MediaItem, WatchStatus } from '../types';
 import AddMediaModal from '../components/AddMediaModal';
+import MediaDetailsModal from '../components/MediaDetailsModal';
 import MediaCard from '../components/MediaCard';
 import { db } from '../firebase';
 import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, query, orderBy } from 'firebase/firestore';
@@ -79,7 +80,9 @@ export default function Library() {
   const [mediaTypeFilter, setMediaTypeFilter] = useState(0); // 0: All, 1: Movies, 2: Series
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MediaItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
   
   const muiTheme = useMuiTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
@@ -215,10 +218,10 @@ export default function Library() {
             <Typography variant="caption" sx={{ px: 1, mb: 1, mt: 3, color: 'text.secondary', letterSpacing: '0.1em', fontWeight: 700, textTransform: 'uppercase' }}>
               Biblioteca
             </Typography>
-            <NavItem icon={LibraryIcon} label="Ver Todo" view="all" />
-            <NavItem icon={WatchingIcon} label="Viendo Ahora" view="watching" />
-            <NavItem icon={WishlistIcon} label="Lista de Deseos" view="pending" />
-            <NavItem icon={CompletedIcon} label="Completadas" view="completed" />
+            <NavItem icon={LibraryIcon} label="Todo" view="all" />
+            <NavItem icon={WatchingIcon} label="Viendo" view="watching" />
+            <NavItem icon={WishlistIcon} label="Por ver" view="pending" />
+            <NavItem icon={CompletedIcon} label="Visto" view="completed" />
           </Box>
 
           <Box sx={{ pt: 3, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -348,6 +351,10 @@ export default function Library() {
                         onRemove={removeItem} 
                         onStatusUpdate={updateStatus} 
                         onClick={() => {
+                          setSelectedItem(item);
+                          setIsDetailsModalOpen(true);
+                        }}
+                        onEdit={() => {
                           setEditingItem(item);
                           setIsModalOpen(true);
                         }}
@@ -379,6 +386,12 @@ export default function Library() {
         }} 
         onSave={handleSave}
         initialData={editingItem}
+      />
+
+      <MediaDetailsModal 
+        open={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+        item={selectedItem}
       />
     </Box>
   );

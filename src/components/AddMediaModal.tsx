@@ -37,6 +37,7 @@ export default function AddMediaModal({ open, onClose, onSave, initialData }: Ad
     rating: number;
     comment: string;
     imageUrl: string;
+    tmdbId: number | null;
     season: number | string;
     episode: number | string;
   }>({
@@ -46,6 +47,7 @@ export default function AddMediaModal({ open, onClose, onSave, initialData }: Ad
     rating: 7,
     comment: '',
     imageUrl: '',
+    tmdbId: null,
     season: 1,
     episode: 1
   });
@@ -66,6 +68,7 @@ export default function AddMediaModal({ open, onClose, onSave, initialData }: Ad
           rating: initialData.rating || 0,
           comment: initialData.comment || '',
           imageUrl: initialData.imageUrl || '',
+          tmdbId: initialData.tmdbId || null,
           season: initialData.season || 1,
           episode: initialData.episode || 1
         });
@@ -77,6 +80,7 @@ export default function AddMediaModal({ open, onClose, onSave, initialData }: Ad
           rating: 7,
           comment: '',
           imageUrl: '',
+          tmdbId: null,
           season: 1,
           episode: 1
         });
@@ -130,7 +134,7 @@ export default function AddMediaModal({ open, onClose, onSave, initialData }: Ad
     if (newType === 'movie' && formData.status === 'watching') {
       newStatus = 'pending';
     }
-    setFormData({ ...formData, type: newType, status: newStatus, title: '', imageUrl: '' });
+    setFormData({ ...formData, type: newType, status: newStatus, title: '', imageUrl: '', tmdbId: null });
     setSearchQuery('');
     setOptions([]);
   };
@@ -159,7 +163,7 @@ export default function AddMediaModal({ open, onClose, onSave, initialData }: Ad
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           {initialData ? 'Editar registro' : 'Agregar a mi lista'}
         </DialogTitle>
@@ -218,9 +222,9 @@ export default function AddMediaModal({ open, onClose, onSave, initialData }: Ad
                     if (newValue && typeof newValue !== 'string') {
                       const title = formData.type === 'movie' ? (newValue.title || newValue.original_title) : (newValue.name || newValue.original_name);
                       const imageUrl = newValue.poster_path ? `https://image.tmdb.org/t/p/w500${newValue.poster_path}` : '';
-                      setFormData({ ...formData, title: title || '', imageUrl });
+                      setFormData({ ...formData, title: title || '', imageUrl, tmdbId: newValue.id });
                     } else {
-                      setFormData({ ...formData, title: '', imageUrl: '' });
+                      setFormData({ ...formData, title: '', imageUrl: '', tmdbId: null });
                     }
                   }}
                   renderInput={(params) => (

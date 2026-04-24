@@ -14,7 +14,8 @@ import {
   MoreVert as MoreVertIcon,
   CheckCircle as CompletedIcon,
   PlayCircle as WatchingIcon,
-  Schedule as PendingIcon
+  Schedule as PendingIcon,
+  Edit as EditIcon
 } from '@mui/icons-material';
 import { motion } from 'motion/react';
 import { MediaItem, WatchStatus } from '../types';
@@ -24,15 +25,16 @@ interface MediaCardProps {
   onRemove: (id: string) => void;
   onStatusUpdate: (id: string, status: WatchStatus) => void;
   onClick: () => void;
+  onEdit: () => void;
 }
 
 const statusBadgeConfig = {
-  pending: { label: 'Pendiente', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)' },
+  pending: { label: 'Por ver', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)' },
   watching: { label: 'Viendo', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.3)' },
-  completed: { label: 'Completado', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)' },
+  completed: { label: 'Visto', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)' },
 } as const;
 
-export default function MediaCard({ item, onRemove, onStatusUpdate, onClick }: MediaCardProps) {
+export default function MediaCard({ item, onRemove, onStatusUpdate, onClick, onEdit }: MediaCardProps) {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -202,14 +204,14 @@ export default function MediaCard({ item, onRemove, onStatusUpdate, onClick }: M
         )}
         <MenuItem onClick={() => { onStatusUpdate(item.id, 'pending'); handleClose(); }} sx={{ py: 1.5 }}>
           <ListItemIcon><PendingIcon fontSize="small" sx={{ color: 'warning.main' }} /></ListItemIcon>
-          <ListItemText slotProps={{ primary: { variant: 'body2', sx: { fontWeight: 600 } } }}>Pendiente</ListItemText>
+          <ListItemText slotProps={{ primary: { variant: 'body2', sx: { fontWeight: 600 } } }}>Por ver</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => { onStatusUpdate(item.id, 'completed'); handleClose(); }} sx={{ py: 1.5 }}>
           <ListItemIcon><CompletedIcon fontSize="small" sx={{ color: 'success.main' }} /></ListItemIcon>
-          <ListItemText slotProps={{ primary: { variant: 'body2', sx: { fontWeight: 600 } } }}>Completado</ListItemText>
+          <ListItemText slotProps={{ primary: { variant: 'body2', sx: { fontWeight: 600 } } }}>Visto</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => { onClick(); handleClose(); }} sx={{ py: 1.5 }}>
-          <ListItemIcon><PendingIcon fontSize="small" color="primary" /></ListItemIcon>
+        <MenuItem onClick={() => { onEdit(); handleClose(); }} sx={{ py: 1.5 }}>
+          <ListItemIcon><EditIcon fontSize="small" color="primary" /></ListItemIcon>
           <ListItemText slotProps={{ primary: { variant: 'body2', sx: { fontWeight: 600 } } }}>Editar</ListItemText>
         </MenuItem>
         <Box sx={{ my: 0.5, height: '1px', bgcolor: 'rgba(255,255,255,0.1)' }} />
