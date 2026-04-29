@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, Button, Container, Stack } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Movie as MovieIcon, PlayArrow as PlayIcon } from '@mui/icons-material';
+import { Movie as MovieIcon, Login as LoginIcon } from '@mui/icons-material';
+import LoginModal from '../components/LoginModal';
 
 export default function Home() {
-  const navigate = useNavigate();
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   return (
     <Box 
@@ -93,8 +93,8 @@ export default function Home() {
               <Button 
                 variant="contained" 
                 size="large" 
-                onClick={() => navigate('/library')}
-                startIcon={<PlayIcon />}
+                onClick={() => setIsLoginOpen(true)}
+                startIcon={<LoginIcon />}
                 sx={{ 
                   px: { xs: 3, sm: 5 }, 
                   py: { xs: 1, sm: 1.5, md: 1.8 }, 
@@ -109,7 +109,7 @@ export default function Home() {
                   width: { xs: '100%', sm: 'auto' }
                 }}
               >
-                Explorar Mi Biblioteca
+                Iniciar sesión
               </Button>
             </Box>
 
@@ -141,6 +141,11 @@ export default function Home() {
           </Stack>
         </motion.div>
       </Container>
+
+      <LoginModal 
+        open={isLoginOpen} 
+        onClose={() => setIsLoginOpen(false)} 
+      />
     </Box>
   );
 }
