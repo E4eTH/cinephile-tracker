@@ -12,7 +12,13 @@ import {
   Avatar,
   Tab,
   Tabs,
-  Button
+  Button,
+  CircularProgress,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  Divider,
+  ListItemText
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -23,7 +29,10 @@ import {
   Visibility as WatchingIcon,
   Bookmark as WishlistIcon,
   CheckCircle as CompletedIcon,
-  Home as HomeIcon
+  Home as HomeIcon,
+  Logout as LogoutIcon,
+  Person as PersonIcon,
+  Settings as SettingsIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -31,49 +40,15 @@ import { MediaItem, WatchStatus } from '../types';
 import AddMediaModal from '../components/AddMediaModal';
 import MediaDetailsModal from '../components/MediaDetailsModal';
 import MediaCard from '../components/MediaCard';
-import { db } from '../firebase';
-import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, query, orderBy } from 'firebase/firestore';
+import { db, auth } from '../firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, query, orderBy, where } from 'firebase/firestore';
 
-
-const INITIAL_DATA: MediaItem[] = [
-  {
-    id: '1',
-    title: 'Dune: Part Two',
-    type: 'movie',
-    status: 'watching',
-    rating: 9.5,
-    imageUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1000&auto=format&fit=crop',
-    comment: 'Paul Atreides unites with Chani and the Fremen while on a warpath of revenge against the conspirators who destroyed his family.',
-    createdAt: Date.now()
-  },
-  {
-    id: '2',
-    title: 'The Bear',
-    type: 'series',
-    status: 'watching',
-    rating: 9.0,
-    imageUrl: 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=1000&auto=format&fit=crop',
-    comment: 'A young chef from the fine dining world comes home to Chicago to run his family sandwich shop.',
-    season: 2,
-    episode: 8,
-    createdAt: Date.now() - 1000
-  },
-  {
-    id: '3',
-    title: 'Shogun',
-    type: 'series',
-    status: 'pending',
-    rating: 8.5,
-    imageUrl: 'https://images.unsplash.com/photo-1542204172-3c3f25de8155?q=80&w=1000&auto=format&fit=crop',
-    comment: 'When a mysterious European ship is found marooned in a nearby fishing village, Lord Yoshii Toranaga discovers secrets that could tip the scales of power.',
-    season: 1,
-    episode: 1,
-    createdAt: Date.now() - 2000
-  }
-];
 
 export default function Library() {
   const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [items, setItems] = useState<MediaItem[]>([]);
   
   const [activeView, setActiveView] = useState<'all' | WatchStatus>('all');
@@ -83,12 +58,33 @@ export default function Library() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MediaItem | null>(null);
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const menuOpen = Boolean(anchorEl);
   
   const muiTheme = useMuiTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
 
   useEffect(() => {
-    const q = query(collection(db, 'media'), orderBy('createdAt', 'desc'));
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+      if (!currentUser) {
+        navigate('/');
+      }
+    });
+
+    return () => unsubscribeAuth();
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const q = query(
+      collection(db, 'media'), 
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+    
     const unsubscribe = onSnapshot(
       q, 
       (snapshot) => {
@@ -96,6 +92,7 @@ export default function Library() {
           const data = doc.data();
           return {
             id: doc.id,
+            userId: data.userId || '',
             ...data,
             comment: data.comment || (data as any).description || ''
           };
@@ -107,9 +104,11 @@ export default function Library() {
       }
     );
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
-  const handleSave = async (newItem: Omit<MediaItem, 'id' | 'createdAt'> | MediaItem) => {
+  const handleSave = async (newItem: Omit<MediaItem, 'id' | 'createdAt' | 'userId'> | MediaItem) => {
+    if (!user) return;
+    
     try {
       if ('id' in newItem) {
         // Update existing item
@@ -119,6 +118,7 @@ export default function Library() {
         // Add new item
         await addDoc(collection(db, 'media'), {
           ...newItem,
+          userId: user.uid,
           createdAt: Date.now()
         });
       }
@@ -142,6 +142,23 @@ export default function Library() {
       await updateDoc(doc(db, 'media', id), { status });
     } catch (error) {
       console.error("Error updating document: ", error);
+    }
+  };
+
+  const handleUserClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseMenu = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      navigate('/');
+    } catch (error) {
+      console.error("Error signing out: ", error);
     }
   };
 
@@ -178,9 +195,16 @@ export default function Library() {
     </Box>
   );
 
+  if (authLoading) {
+    return (
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'background.default' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default', color: 'text.primary', overflowX: 'hidden' }}>
-      {/* Sidebar */}
       {!isMobile && (
         <Box 
           className="glass"
@@ -224,11 +248,42 @@ export default function Library() {
             <NavItem icon={CompletedIcon} label="Visto" view="completed" />
           </Box>
 
-          <Box sx={{ pt: 3, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar sx={{ bgcolor: 'primary.main', width: 40, height: 40 }}>EO</Avatar>
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>Ezequiel Olivar</Typography>
-              <Typography variant="caption" color="text.secondary">Plan Pro</Typography>
+          <Box 
+            sx={{ 
+              pt: 3, 
+              borderTop: '1px solid rgba(255,255,255,0.05)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 2,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              p: 1,
+              borderRadius: 3,
+              '&:hover': { 
+                bgcolor: 'rgba(255, 255, 255, 0.05)',
+                '& .user-avatar': { transform: 'scale(1.05)' }
+              }
+            }}
+            onClick={handleUserClick}
+          >
+            <Avatar 
+              className="user-avatar"
+              src={user?.photoURL || undefined} 
+              sx={{ 
+                bgcolor: 'primary.main', 
+                width: 40, 
+                height: 40,
+                transition: 'transform 0.2s ease',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+              }}
+            >
+              {user?.displayName?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
+            </Avatar>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user?.displayName || user?.email?.split('@')[0] || 'Cinefilo'}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Mi Cuenta</Typography>
             </Box>
           </Box>
         </Box>
@@ -281,8 +336,23 @@ export default function Library() {
             />
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 2 }}>
-
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            {isMobile && (
+              <IconButton onClick={handleUserClick} sx={{ p: 0.5 }}>
+                <Avatar 
+                  src={user?.photoURL || undefined} 
+                  sx={{ 
+                    bgcolor: 'primary.main', 
+                    width: 32, 
+                    height: 32, 
+                    fontSize: '0.875rem',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                  }}
+                >
+                  {user?.displayName?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
+                </Avatar>
+              </IconButton>
+            )}
             <Button 
               variant="contained" 
               startIcon={<AddIcon />}
@@ -393,6 +463,76 @@ export default function Library() {
         onClose={() => setIsDetailsModalOpen(false)}
         item={selectedItem}
       />
+
+      <Menu
+        anchorEl={anchorEl}
+        open={menuOpen}
+        onClose={handleCloseMenu}
+        onClick={handleCloseMenu}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        slotProps={{
+          paper: {
+            elevation: 0,
+            sx: {
+              overflow: 'visible',
+              filter: 'drop-shadow(0px 4px 20px rgba(0,0,0,0.4))',
+              mt: 1.5,
+              bgcolor: 'rgba(23, 23, 23, 0.95)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: 3,
+              minWidth: 220,
+              '& .MuiMenuItem-root': {
+                px: 2,
+                py: 1.2,
+                mx: 1,
+                my: 0.5,
+                borderRadius: 2,
+                fontSize: '0.875rem',
+                gap: 1.5,
+                transition: 'all 0.2s',
+                '&:hover': {
+                  bgcolor: 'rgba(99, 102, 241, 0.1)',
+                  color: 'primary.main',
+                  '& .MuiListItemIcon-root': {
+                    color: 'primary.main'
+                  }
+                }
+              }
+            },
+          },
+        }}
+      >
+        <Box sx={{ px: 2, py: 1.5, mb: 0.5 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+            {user?.displayName || 'Cinefilo'}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {user?.email}
+          </Typography>
+        </Box>
+        <Divider sx={{ my: 0.5, borderColor: 'rgba(255,255,255,0.05)' }} />
+        <MenuItem onClick={handleCloseMenu}>
+          <ListItemIcon sx={{ minWidth: 'auto !important' }}>
+            <PersonIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Perfil" />
+        </MenuItem>
+        <MenuItem onClick={handleCloseMenu}>
+          <ListItemIcon sx={{ minWidth: 'auto !important' }}>
+            <SettingsIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Ajustes" />
+        </MenuItem>
+        <Divider sx={{ my: 0.5, borderColor: 'rgba(255,255,255,0.05)' }} />
+        <MenuItem onClick={handleLogout} sx={{ color: '#ff4d4d !important', '&:hover': { bgcolor: 'rgba(255, 77, 77, 0.1) !important' } }}>
+          <ListItemIcon sx={{ minWidth: 'auto !important' }}>
+            <LogoutIcon fontSize="small" sx={{ color: '#ff4d4d' }} />
+          </ListItemIcon>
+          <ListItemText primary="Cerrar sesión" />
+        </MenuItem>
+      </Menu>
     </Box>
   );
 }

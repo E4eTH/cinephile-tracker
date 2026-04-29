@@ -3,6 +3,7 @@ export type MediaType = 'movie' | 'series';
 
 export interface MediaItem {
   id: string;
+  userId: string;
   tmdbId?: number;
   title: string;
   type: MediaType;

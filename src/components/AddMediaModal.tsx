@@ -25,7 +25,7 @@ import { MediaItem, WatchStatus, MediaType } from '../types';
 interface AddMediaModalProps {
   open: boolean;
   onClose: () => void;
-  onSave: (item: Omit<MediaItem, 'id' | 'createdAt'> | MediaItem) => void;
+  onSave: (item: Omit<MediaItem, 'id' | 'createdAt' | 'userId'> | MediaItem) => void;
   initialData?: MediaItem | null;
 }
 
@@ -152,7 +152,7 @@ export default function AddMediaModal({ open, onClose, onSave, initialData }: Ad
     }
 
     if (initialData) {
-      onSave({ ...itemToSave, id: initialData.id, createdAt: initialData.createdAt } as MediaItem);
+      onSave({ ...itemToSave, id: initialData.id, createdAt: initialData.createdAt, userId: initialData.userId } as MediaItem);
     } else {
       onSave(itemToSave as any);
     }

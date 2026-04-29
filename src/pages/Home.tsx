@@ -1,11 +1,24 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button, Container, Stack } from '@mui/material';
 import { motion } from 'motion/react';
-import { Movie as MovieIcon, Login as LoginIcon } from '@mui/icons-material';
+import { Movie as MovieIcon, Login as LoginIcon, LibraryBooks as LibraryIcon } from '@mui/icons-material';
 import LoginModal from '../components/LoginModal';
+import { auth } from '../firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 
 export default function Home() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
 
   return (
     <Box 
@@ -93,8 +106,8 @@ export default function Home() {
               <Button 
                 variant="contained" 
                 size="large" 
-                onClick={() => setIsLoginOpen(true)}
-                startIcon={<LoginIcon />}
+                onClick={() => user ? navigate('/library') : setIsLoginOpen(true)}
+                startIcon={user ? <LibraryIcon /> : <LoginIcon />}
                 sx={{ 
                   px: { xs: 3, sm: 5 }, 
                   py: { xs: 1, sm: 1.5, md: 1.8 }, 
@@ -109,7 +122,7 @@ export default function Home() {
                   width: { xs: '100%', sm: 'auto' }
                 }}
               >
-                Iniciar sesión
+                {user ? "Ir a mi Biblioteca" : "Iniciar sesión"}
               </Button>
             </Box>
 
