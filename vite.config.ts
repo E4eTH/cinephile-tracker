@@ -18,6 +18,27 @@ export default defineConfig(({mode}) => {
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
+      proxy: {
+        '/.netlify/functions/tmdb': {
+          target: 'https://api.themoviedb.org/3/',
+          changeOrigin: true,
+          rewrite: (path) => {
+            const url = new URL(path, 'http://localhost');
+            const endpoint = url.searchParams.get('endpoint') || '';
+            url.searchParams.delete('endpoint');
+            return endpoint + url.search;
+          },
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              const apiKey = env.TMDB_API_KEY;
+              if (apiKey) {
+                const separator = proxyReq.path.includes('?') ? '&' : '?';
+                proxyReq.path += `${separator}api_key=${apiKey}`;
+              }
+            });
+          },
+        },
+      },
       hmr: process.env.DISABLE_HMR !== 'true',
     },
   };

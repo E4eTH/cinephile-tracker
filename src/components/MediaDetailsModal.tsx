@@ -59,9 +59,8 @@ export default function MediaDetailsModal({ open, onClose, item }: MediaDetailsM
 
     setLoading(true);
     try {
-      const apiKey = import.meta.env.VITE_TMDB_API_KEY;
       const endpoint = item.type === 'movie' ? `movie/${item.tmdbId}` : `tv/${item.tmdbId}`;
-      const response = await fetch(`https://api.themoviedb.org/3/${endpoint}?api_key=${apiKey}&language=es-ES`);
+      const response = await fetch(`/.netlify/functions/tmdb?endpoint=${endpoint}&language=es-ES`);
       const data = await response.json();
       setDetails(data);
     } catch (error) {

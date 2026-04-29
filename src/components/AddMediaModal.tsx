@@ -102,9 +102,8 @@ export default function AddMediaModal({ open, onClose, onSave, initialData }: Ad
 
     const fetchOptions = async () => {
       try {
-        const apiKey = import.meta.env.VITE_TMDB_API_KEY;
         const endpoint = formData.type === 'movie' ? 'search/movie' : 'search/tv';
-        const response = await fetch(`https://api.themoviedb.org/3/${endpoint}?api_key=${apiKey}&query=${encodeURIComponent(searchQuery)}&language=es-ES&page=1`);
+        const response = await fetch(`/.netlify/functions/tmdb?endpoint=${endpoint}&query=${encodeURIComponent(searchQuery)}&language=es-ES&page=1`);
         const data = await response.json();
 
         if (active) {
