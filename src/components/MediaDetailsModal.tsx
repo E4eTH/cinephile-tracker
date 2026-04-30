@@ -38,6 +38,7 @@ interface TMDBDetails {
   first_air_date?: string;
   tagline?: string;
   vote_average?: number;
+  videos?: { results: { type: string; site: string; key: string }[] };
 }
 
 export default function MediaDetailsModal({ open, onClose, item }: MediaDetailsModalProps) {
@@ -60,7 +61,7 @@ export default function MediaDetailsModal({ open, onClose, item }: MediaDetailsM
     setLoading(true);
     try {
       const endpoint = item.type === 'movie' ? `movie/${item.tmdbId}` : `tv/${item.tmdbId}`;
-      const response = await fetch(`/.netlify/functions/tmdb?endpoint=${endpoint}&language=es-ES`);
+      const response = await fetch(`/.netlify/functions/tmdb?endpoint=${endpoint}&append_to_response=videos&language=es-ES`);
       const data = await response.json();
       setDetails(data);
     } catch (error) {
@@ -92,7 +93,7 @@ export default function MediaDetailsModal({ open, onClose, item }: MediaDetailsM
             bgcolor: 'rgba(15, 23, 42, 0.95)',
             backdropFilter: 'blur(16px)',
             backgroundImage: 'none',
-            borderRadius: 4,
+            borderRadius: 1.5,
             border: '1px solid rgba(255, 255, 255, 0.1)',
             overflow: 'hidden',
             display: 'flex',
@@ -156,8 +157,10 @@ export default function MediaDetailsModal({ open, onClose, item }: MediaDetailsM
           }}
         >
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 4 }, alignItems: { xs: 'center', md: 'flex-start' } }}>
-            {/* Poster */}
-            <Box
+            {/* Poster and Trailer Container */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+              {/* Poster */}
+              <Box
               component={motion.div}
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -165,7 +168,7 @@ export default function MediaDetailsModal({ open, onClose, item }: MediaDetailsM
                 width: { xs: 90, sm: 120, md: 160 },
                 flexShrink: 0,
                 mx: { xs: 'auto', md: 0 },
-                borderRadius: 3,
+                borderRadius: 1.5,
                 overflow: 'hidden',
                 boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
                 border: '1px solid rgba(255,255,255,0.1)',
@@ -178,6 +181,30 @@ export default function MediaDetailsModal({ open, onClose, item }: MediaDetailsM
                 style={{ width: '100%', height: 'auto', display: 'block' }}
               />
             </Box>
+            {details?.videos?.results?.find(v => v.site === 'YouTube' && v.type === 'Trailer') && (
+              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+                <IconButton 
+                  component="a" 
+                  href={`https://www.youtube.com/watch?v=${details.videos.results.find(v => v.site === 'YouTube' && v.type === 'Trailer')?.key}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ 
+                    bgcolor: 'rgba(229, 9, 20, 0.15)', 
+                    color: '#e50914', 
+                    borderRadius: 2,
+                    px: 2,
+                    py: 1,
+                    '&:hover': { bgcolor: 'rgba(229, 9, 20, 0.25)' },
+                    border: '1px solid rgba(229, 9, 20, 0.3)',
+                    gap: 1
+                  }}
+                >
+                  <TvIcon fontSize="small" />
+                  <Typography variant="button" sx={{ fontWeight: 700, textTransform: 'none' }}>Ver Trailer</Typography>
+                </IconButton>
+              </Box>
+            )}
+          </Box>
 
             {/* Info */}
             <Box sx={{ flex: 1, pt: { xs: 0, md: 2 }, width: '100%', overflow: 'hidden' }}>
@@ -214,7 +241,7 @@ export default function MediaDetailsModal({ open, onClose, item }: MediaDetailsM
                 </Typography>
               )}
 
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1.5, justifyContent: { xs: 'center', md: 'flex-start' } }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1.5, justifyContent: { xs: 'center', md: 'flex-start' }, alignItems: 'center' }}>
                 {details?.genres?.map(genre => (
                   <Chip
                     key={genre.id}
@@ -224,6 +251,47 @@ export default function MediaDetailsModal({ open, onClose, item }: MediaDetailsM
                     sx={{ borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary' }}
                   />
                 ))}
+                {details?.vote_average ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: { xs: 0, md: 1 } }}>
+                    <Box sx={{ position: 'relative', display: 'inline-flex', bgcolor: '#081c22', borderRadius: '50%', p: 0.5 }}>
+                      <CircularProgress
+                        variant="determinate"
+                        value={100}
+                        size={40}
+                        thickness={4}
+                        sx={{ color: 'rgba(255, 255, 255, 0.1)', position: 'absolute', top: 4, left: 4 }}
+                      />
+                      <CircularProgress
+                        variant="determinate"
+                        value={details.vote_average * 10}
+                        size={40}
+                        thickness={4}
+                        sx={{ 
+                          color: details.vote_average >= 7 ? '#21d07a' : details.vote_average >= 4 ? '#d2d531' : '#db2360',
+                          position: 'relative',
+                          zIndex: 1
+                        }}
+                      />
+                      <Box
+                        sx={{
+                          top: 0,
+                          left: 0,
+                          bottom: 0,
+                          right: 0,
+                          position: 'absolute',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Typography variant="caption" component="div" sx={{ color: 'white', fontWeight: 800, fontSize: '0.75rem' }}>
+                          {Math.round(details.vote_average * 10)}<span style={{ fontSize: '0.5rem' }}>%</span>
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Typography variant="caption" sx={{ fontWeight: 700, lineHeight: 1.1, width: 40 }}>User<br/>Score</Typography>
+                  </Box>
+                ) : null}
               </Box>
 
               <Typography variant="subtitle1" sx={{ mb: 0.5, fontWeight: 700 }}>Sinopsis</Typography>
@@ -235,7 +303,7 @@ export default function MediaDetailsModal({ open, onClose, item }: MediaDetailsM
                     position: 'relative',
                     background: 'linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(15, 23, 42, 0.4) 100%)',
                     backdropFilter: 'blur(24px)',
-                    borderRadius: '16px',
+                    borderRadius: '8px',
                     height: '100px',
                     overflowY: 'auto',
                     scrollBehavior: 'smooth',
@@ -282,7 +350,7 @@ export default function MediaDetailsModal({ open, onClose, item }: MediaDetailsM
                       position: 'relative',
                       background: 'linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(15, 23, 42, 0.4) 100%)',
                       backdropFilter: 'blur(24px)',
-                      borderRadius: '16px',
+                      borderRadius: '8px',
                       maxHeight: '80px',
                       overflowY: 'auto',
                       scrollBehavior: 'smooth',

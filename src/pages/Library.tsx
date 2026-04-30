@@ -29,7 +29,6 @@ import {
   Visibility as WatchingIcon,
   Bookmark as WishlistIcon,
   CheckCircle as CompletedIcon,
-  Home as HomeIcon,
   Logout as LogoutIcon,
   Person as PersonIcon,
   Settings as SettingsIcon
@@ -81,13 +80,13 @@ export default function Library() {
 
     const q = query(
       collection(db, 'media'), 
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', user.uid)
     );
     
     const unsubscribe = onSnapshot(
       q, 
       (snapshot) => {
+        console.log(`Firestore snapshot received: ${snapshot.docs.length} items`);
         const mediaItems = snapshot.docs.map(doc => {
           const data = doc.data();
           return {
@@ -95,12 +94,21 @@ export default function Library() {
             userId: data.userId || '',
             ...data,
             comment: data.comment || (data as any).description || ''
-          };
-        }) as MediaItem[];
+          } as MediaItem;
+        });
+        
+        // Sort in memory to avoid needing a composite index in Firestore
+        // Newest first (descending by createdAt)
+        mediaItems.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        
         setItems(mediaItems);
       },
       (error) => {
-        console.error("FIREBASE ERROR en onSnapshot (probablemente reglas de seguridad): ", error);
+        console.error("FIREBASE ERROR en onSnapshot: ", error);
+        // If it's a permission error, maybe the rules are not set correctly
+        if (error.code === 'permission-denied') {
+          console.warn("TIP: Revisa las reglas de seguridad de Firestore para permitir lecturas en la colección 'media'.");
+        }
       }
     );
     return () => unsubscribe();
@@ -178,7 +186,7 @@ export default function Library() {
         gap: 2, 
         px: 2, 
         py: 1.5, 
-        borderRadius: 3, 
+        borderRadius: 1.5, 
         cursor: 'pointer',
         transition: 'all 0.2s',
         color: activeView === view ? 'primary.main' : 'text.secondary',
@@ -222,7 +230,7 @@ export default function Library() {
               width: 36, 
               height: 36, 
               bgcolor: 'primary.main', 
-              borderRadius: 2, 
+              borderRadius: 1, 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
@@ -234,12 +242,7 @@ export default function Library() {
           </Box>
 
           <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
-             <Typography variant="caption" sx={{ px: 1, mb: 1, color: 'text.secondary', letterSpacing: '0.1em', fontWeight: 700, textTransform: 'uppercase' }}>
-              Navegación
-            </Typography>
-            <NavItem icon={HomeIcon} label="Inicio" onClick={() => navigate('/')} />
-            
-            <Typography variant="caption" sx={{ px: 1, mb: 1, mt: 3, color: 'text.secondary', letterSpacing: '0.1em', fontWeight: 700, textTransform: 'uppercase' }}>
+            <Typography variant="caption" sx={{ px: 1, mb: 1, color: 'text.secondary', letterSpacing: '0.1em', fontWeight: 700, textTransform: 'uppercase' }}>
               Biblioteca
             </Typography>
             <NavItem icon={LibraryIcon} label="Todo" view="all" />
@@ -258,7 +261,7 @@ export default function Library() {
               cursor: 'pointer',
               transition: 'all 0.2s',
               p: 1,
-              borderRadius: 3,
+              borderRadius: 1.5,
               '&:hover': { 
                 bgcolor: 'rgba(255, 255, 255, 0.05)',
                 '& .user-avatar': { transform: 'scale(1.05)' }
@@ -303,11 +306,6 @@ export default function Library() {
             flexShrink: 0
           }}
         >
-          {isMobile && (
-             <IconButton onClick={() => navigate('/')} sx={{ color: 'primary.main' }}>
-                <HomeIcon />
-             </IconButton>
-          )}
           
           <Box sx={{ flex: 1, maxWidth: 500, mx: { xs: 1, md: 4 } }}>
             <TextField
@@ -325,7 +323,7 @@ export default function Library() {
                     </InputAdornment>
                   ),
                   sx: { 
-                    borderRadius: '20px', 
+                    borderRadius: '10px', 
                     bgcolor: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.05)',
                     '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' },
@@ -481,14 +479,14 @@ export default function Library() {
               bgcolor: 'rgba(23, 23, 23, 0.95)',
               backdropFilter: 'blur(10px)',
               border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: 3,
+              borderRadius: 1.5,
               minWidth: 220,
               '& .MuiMenuItem-root': {
                 px: 2,
                 py: 1.2,
                 mx: 1,
                 my: 0.5,
-                borderRadius: 2,
+                borderRadius: 1,
                 fontSize: '0.875rem',
                 gap: 1.5,
                 transition: 'all 0.2s',

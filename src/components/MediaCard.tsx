@@ -111,7 +111,7 @@ export default function MediaCard({ item, onRemove, onStatusUpdate, onClick, onE
             sx={{ 
               px: 1, 
               py: 0.25, 
-              borderRadius: 20, 
+              borderRadius: 1, 
               fontSize: '10px', 
               fontWeight: 700, 
               textTransform: 'uppercase', 

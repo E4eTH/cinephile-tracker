@@ -216,6 +216,10 @@ export default function AddMediaModal({ open, onClose, onSave, initialData }: Ad
                   value={options.find(opt => (formData.type === 'movie' ? opt.title : opt.name) === formData.title) || null}
                   onInputChange={(_, newInputValue) => {
                     setSearchQuery(newInputValue);
+                    // Sync title with input so the user can add items manually if they want
+                    if (!initialData) {
+                      setFormData(prev => ({ ...prev, title: newInputValue }));
+                    }
                   }}
                   onChange={(_, newValue) => {
                     if (newValue && typeof newValue !== 'string') {
