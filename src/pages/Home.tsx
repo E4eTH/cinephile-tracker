@@ -112,7 +112,7 @@ export default function Home() {
                   px: { xs: 3, sm: 5 }, 
                   py: { xs: 1, sm: 1.5, md: 1.8 }, 
                   fontSize: { xs: '0.85rem', sm: '0.95rem', md: '1rem' },
-                  borderRadius: '100px',
+                  borderRadius: 2,
                   background: 'linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%)',
                   '&:hover': {
                     transform: 'scale(1.05)',
