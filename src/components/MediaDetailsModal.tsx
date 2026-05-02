@@ -189,13 +189,13 @@ export default function MediaDetailsModal({ open, onClose, item }: MediaDetailsM
                   target="_blank"
                   rel="noopener noreferrer"
                   sx={{ 
-                    bgcolor: 'rgba(229, 9, 20, 0.15)', 
-                    color: '#e50914', 
+                    bgcolor: 'rgba(99, 102, 241, 0.15)', 
+                    color: '#6366f1', 
                     borderRadius: 2,
                     px: 2,
                     py: 1,
-                    '&:hover': { bgcolor: 'rgba(229, 9, 20, 0.25)' },
-                    border: '1px solid rgba(229, 9, 20, 0.3)',
+                    '&:hover': { bgcolor: 'rgba(99, 102, 241, 0.25)' },
+                    border: '1px solid rgba(99, 102, 241, 0.3)',
                     gap: 1
                   }}
                 >
@@ -289,7 +289,7 @@ export default function MediaDetailsModal({ open, onClose, item }: MediaDetailsM
                         </Typography>
                       </Box>
                     </Box>
-                    <Typography variant="caption" sx={{ fontWeight: 700, lineHeight: 1.1, width: 40 }}>User<br/>Score</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 700, lineHeight: 1.1, width: 80 }}>Calificación de<br/>Usuarios</Typography>
                   </Box>
                 ) : null}
               </Box>

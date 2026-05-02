@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Fab, 
-  useMediaQuery, 
+import {
+  Box,
+  Typography,
+  Fab,
+  useMediaQuery,
   useTheme as useMuiTheme,
   Grid,
   IconButton,
@@ -20,10 +20,10 @@ import {
   Divider,
   ListItemText
 } from '@mui/material';
-import { 
-  Add as AddIcon, 
-  Movie as MovieIcon, 
-  Tv as TvIcon, 
+import {
+  Add as AddIcon,
+  Movie as MovieIcon,
+  Tv as TvIcon,
   Search as SearchIcon,
   LibraryBooks as LibraryIcon,
   Visibility as WatchingIcon,
@@ -49,7 +49,7 @@ export default function Library() {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [items, setItems] = useState<MediaItem[]>([]);
-  
+
   const [activeView, setActiveView] = useState<'all' | WatchStatus>('all');
   const [mediaTypeFilter, setMediaTypeFilter] = useState(0); // 0: All, 1: Movies, 2: Series
   const [searchQuery, setSearchQuery] = useState('');
@@ -59,7 +59,7 @@ export default function Library() {
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const menuOpen = Boolean(anchorEl);
-  
+
   const muiTheme = useMuiTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
 
@@ -79,12 +79,12 @@ export default function Library() {
     if (!user) return;
 
     const q = query(
-      collection(db, 'media'), 
+      collection(db, 'media'),
       where('userId', '==', user.uid)
     );
-    
+
     const unsubscribe = onSnapshot(
-      q, 
+      q,
       (snapshot) => {
         console.log(`Firestore snapshot received: ${snapshot.docs.length} items`);
         const mediaItems = snapshot.docs.map(doc => {
@@ -96,11 +96,11 @@ export default function Library() {
             comment: data.comment || (data as any).description || ''
           } as MediaItem;
         });
-        
+
         // Sort in memory to avoid needing a composite index in Firestore
         // Newest first (descending by createdAt)
         mediaItems.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        
+
         setItems(mediaItems);
       },
       (error) => {
@@ -116,7 +116,7 @@ export default function Library() {
 
   const handleSave = async (newItem: Omit<MediaItem, 'id' | 'createdAt' | 'userId'> | MediaItem) => {
     if (!user) return;
-    
+
     try {
       if ('id' in newItem) {
         // Update existing item
@@ -178,15 +178,15 @@ export default function Library() {
   });
 
   const NavItem = ({ icon: Icon, label, view, onClick }: { icon: any, label: string, view?: string, onClick?: () => void }) => (
-    <Box 
+    <Box
       onClick={onClick || (() => setActiveView(view as any))}
-      sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: 2, 
-        px: 2, 
-        py: 1.5, 
-        borderRadius: 1.5, 
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        px: 2,
+        py: 1.5,
+        borderRadius: 1.5,
         cursor: 'pointer',
         transition: 'all 0.2s',
         color: activeView === view ? 'primary.main' : 'text.secondary',
@@ -214,25 +214,25 @@ export default function Library() {
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default', color: 'text.primary', overflowX: 'hidden' }}>
       {!isMobile && (
-        <Box 
+        <Box
           className="glass"
-          sx={{ 
-            width: 280, 
-            display: 'flex', 
-            flexDirection: 'column', 
-            p: 3, 
+          sx={{
+            width: 280,
+            display: 'flex',
+            flexDirection: 'column',
+            p: 3,
             borderRight: '1px solid rgba(255,255,255,0.05)',
             zIndex: 10
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 6, px: 1 }}>
-            <Box sx={{ 
-              width: 36, 
-              height: 36, 
-              bgcolor: 'primary.main', 
-              borderRadius: 1, 
-              display: 'flex', 
-              alignItems: 'center', 
+            <Box sx={{
+              width: 36,
+              height: 36,
+              bgcolor: 'primary.main',
+              borderRadius: 1,
+              display: 'flex',
+              alignItems: 'center',
               justifyContent: 'center',
               boxShadow: '0 8px 16px rgba(99, 102, 241, 0.3)'
             }}>
@@ -251,30 +251,30 @@ export default function Library() {
             <NavItem icon={CompletedIcon} label="Visto" view="completed" />
           </Box>
 
-          <Box 
-            sx={{ 
-              pt: 3, 
-              borderTop: '1px solid rgba(255,255,255,0.05)', 
-              display: 'flex', 
-              alignItems: 'center', 
+          <Box
+            sx={{
+              pt: 3,
+              borderTop: '1px solid rgba(255,255,255,0.05)',
+              display: 'flex',
+              alignItems: 'center',
               gap: 2,
               cursor: 'pointer',
               transition: 'all 0.2s',
               p: 1,
               borderRadius: 1.5,
-              '&:hover': { 
+              '&:hover': {
                 bgcolor: 'rgba(255, 255, 255, 0.05)',
                 '& .user-avatar': { transform: 'scale(1.05)' }
               }
             }}
             onClick={handleUserClick}
           >
-            <Avatar 
+            <Avatar
               className="user-avatar"
-              src={user?.photoURL || undefined} 
-              sx={{ 
-                bgcolor: 'primary.main', 
-                width: 40, 
+              src={user?.photoURL || undefined}
+              sx={{
+                bgcolor: 'primary.main',
+                width: 40,
                 height: 40,
                 transition: 'transform 0.2s ease',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
@@ -286,7 +286,7 @@ export default function Library() {
               <Typography variant="body2" sx={{ fontWeight: 600, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user?.displayName || user?.email?.split('@')[0] || 'Cinefilo'}
               </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Mi Cuenta</Typography>
+              {/* Subtitle removed */}
             </Box>
           </Box>
         </Box>
@@ -295,18 +295,18 @@ export default function Library() {
       {/* Main Content Area */}
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Top Header */}
-        <Box 
-          sx={{ 
-            height: 80, 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between', 
+        <Box
+          sx={{
+            height: 80,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             px: { xs: 2, md: 6 },
             borderBottom: '1px solid rgba(255,255,255,0.05)',
             flexShrink: 0
           }}
         >
-          
+
           <Box sx={{ flex: 1, maxWidth: 500, mx: { xs: 1, md: 4 } }}>
             <TextField
               placeholder="Buscar películas o series..."
@@ -322,8 +322,8 @@ export default function Library() {
                       <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
                     </InputAdornment>
                   ),
-                  sx: { 
-                    borderRadius: '10px', 
+                  sx: {
+                    borderRadius: '10px',
                     bgcolor: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.05)',
                     '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' },
@@ -337,12 +337,12 @@ export default function Library() {
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
             {isMobile && (
               <IconButton onClick={handleUserClick} sx={{ p: 0.5 }}>
-                <Avatar 
-                  src={user?.photoURL || undefined} 
-                  sx={{ 
-                    bgcolor: 'primary.main', 
-                    width: 32, 
-                    height: 32, 
+                <Avatar
+                  src={user?.photoURL || undefined}
+                  sx={{
+                    bgcolor: 'primary.main',
+                    width: 32,
+                    height: 32,
                     fontSize: '0.875rem',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
                   }}
@@ -351,8 +351,8 @@ export default function Library() {
                 </Avatar>
               </IconButton>
             )}
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               startIcon={<AddIcon />}
               onClick={() => {
                 setEditingItem(null);
@@ -374,17 +374,17 @@ export default function Library() {
               </Typography>
             </Box>
 
-            <Tabs 
-              value={mediaTypeFilter} 
+            <Tabs
+              value={mediaTypeFilter}
               onChange={(_, val) => setMediaTypeFilter(val)}
               sx={{
                 minHeight: 'auto',
                 '& .MuiTabs-indicator': { height: 2, borderRadius: 2 },
-                '& .MuiTab-root': { 
-                  minHeight: 'auto', 
-                  py: 1, 
-                  px: 2, 
-                  fontSize: '0.875rem', 
+                '& .MuiTab-root': {
+                  minHeight: 'auto',
+                  py: 1,
+                  px: 2,
+                  fontSize: '0.875rem',
                   textTransform: 'none',
                   color: 'text.secondary',
                   '&.Mui-selected': { color: 'text.primary' }
@@ -414,10 +414,10 @@ export default function Library() {
                 <Grid container spacing={4}>
                   {filteredItems.map((item) => (
                     <Grid size={{ xs: 6, sm: 4, md: 4, lg: 2.4 }} key={item.id}>
-                      <MediaCard 
-                        item={item} 
-                        onRemove={removeItem} 
-                        onStatusUpdate={updateStatus} 
+                      <MediaCard
+                        item={item}
+                        onRemove={removeItem}
+                        onStatusUpdate={updateStatus}
                         onClick={() => {
                           setSelectedItem(item);
                           setIsDetailsModalOpen(true);
@@ -437,8 +437,8 @@ export default function Library() {
       </Box>
 
       {isMobile && (
-        <Fab 
-          color="primary" 
+        <Fab
+          color="primary"
           onClick={() => setIsModalOpen(true)}
           sx={{ position: 'fixed', bottom: 20, right: 20 }}
         >
@@ -446,17 +446,17 @@ export default function Library() {
         </Fab>
       )}
 
-      <AddMediaModal 
-        open={isModalOpen} 
+      <AddMediaModal
+        open={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
           setEditingItem(null);
-        }} 
+        }}
         onSave={handleSave}
         initialData={editingItem}
       />
 
-      <MediaDetailsModal 
+      <MediaDetailsModal
         open={isDetailsModalOpen}
         onClose={() => setIsDetailsModalOpen(false)}
         item={selectedItem}
@@ -511,18 +511,7 @@ export default function Library() {
           </Typography>
         </Box>
         <Divider sx={{ my: 0.5, borderColor: 'rgba(255,255,255,0.05)' }} />
-        <MenuItem onClick={handleCloseMenu}>
-          <ListItemIcon sx={{ minWidth: 'auto !important' }}>
-            <PersonIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Perfil" />
-        </MenuItem>
-        <MenuItem onClick={handleCloseMenu}>
-          <ListItemIcon sx={{ minWidth: 'auto !important' }}>
-            <SettingsIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Ajustes" />
-        </MenuItem>
+        {/* Perfil and Ajustes options removed */}
         <Divider sx={{ my: 0.5, borderColor: 'rgba(255,255,255,0.05)' }} />
         <MenuItem onClick={handleLogout} sx={{ color: '#ff4d4d !important', '&:hover': { bgcolor: 'rgba(255, 77, 77, 0.1) !important' } }}>
           <ListItemIcon sx={{ minWidth: 'auto !important' }}>
