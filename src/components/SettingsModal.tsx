@@ -27,6 +27,7 @@ import {
 import { User, updateProfile } from 'firebase/auth';
 import { motion, AnimatePresence } from 'motion/react';
 import { MediaItem } from '../types';
+import ImageUpload from './ImageUpload';
 
 interface SettingsModalProps {
   open: boolean;
@@ -238,7 +239,14 @@ export default function SettingsModal({ open, onClose, user, items }: SettingsMo
                 border: '2px solid rgba(15, 23, 42, 1)',
                 zIndex: 2
               }}
-              onClick={() => setIsEditing(!isEditing)}
+              onClick={() => {
+                if (isEditing) {
+                  // Cancelar: revertir cambios locales
+                  setDisplayName(user?.displayName || '');
+                  setPhotoURL(user?.photoURL || '');
+                }
+                setIsEditing(!isEditing);
+              }}
             >
               {isEditing ? <CloseIcon fontSize="small" /> : <EditIcon fontSize="small" />}
             </IconButton>
@@ -265,23 +273,20 @@ export default function SettingsModal({ open, onClose, user, items }: SettingsMo
                         input: { sx: { borderRadius: 2, bgcolor: 'rgba(255,255,255,0.03)' } }
                       }}
                     />
-                    <TextField
-                      label="URL del Avatar"
-                      fullWidth
-                      variant="outlined"
-                      value={photoURL}
-                      onChange={(e) => setPhotoURL(e.target.value)}
-                      placeholder="https://ejemplo.com/imagen.jpg"
-                      slotProps={{
-                        input: { sx: { borderRadius: 2, bgcolor: 'rgba(255,255,255,0.03)' } }
-                      }}
-                    />
+                    
+                    <Box sx={{ mt: 1 }}>
+                      <Typography variant="caption" sx={{ color: 'text.secondary', mb: 1, display: 'block', fontWeight: 600 }}>
+                        Foto de Perfil
+                      </Typography>
+                      <ImageUpload onUploadSuccess={(url) => setPhotoURL(url)} />
+                    </Box>
+
                     <Button 
                       variant="contained" 
                       startIcon={<CheckIcon />} 
                       onClick={handleUpdateProfile}
                       disabled={saving}
-                      sx={{ py: 1.2, borderRadius: 2, fontWeight: 700 }}
+                      sx={{ py: 1.2, borderRadius: 2, fontWeight: 700, mt: 1 }}
                     >
                       {saving ? 'Actualizando...' : 'Guardar Cambios'}
                     </Button>
