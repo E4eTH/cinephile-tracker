@@ -18,9 +18,6 @@ interface ImageUploadProps {
   onUploadSuccess: (url: string) => void;
 }
 
-const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'ml_default';
-const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-
 export default function ImageUpload({ onUploadSuccess }: ImageUploadProps) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -53,12 +50,24 @@ export default function ImageUpload({ onUploadSuccess }: ImageUploadProps) {
       const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels);
       if (!croppedImage) throw new Error('Failed to crop image');
 
+      // 1. Obtener firma del backend
+      const signResponse = await fetch('/.netlify/functions/cloudinary-sign');
+      const signData = await signResponse.json();
+
+      if (!signResponse.ok) {
+        throw new Error(signData.error || 'Error al obtener firma de Cloudinary');
+      }
+
+      // 2. Subir a Cloudinary con firma
       const formData = new FormData();
       formData.append('file', croppedImage);
-      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+      formData.append('api_key', signData.apiKey);
+      formData.append('timestamp', signData.timestamp.toString());
+      formData.append('signature', signData.signature);
+      formData.append('upload_preset', signData.uploadPreset);
 
       const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+        `https://api.cloudinary.com/v1_1/${signData.cloudName}/image/upload`,
         {
           method: 'POST',
           body: formData,
@@ -73,9 +82,9 @@ export default function ImageUpload({ onUploadSuccess }: ImageUploadProps) {
       } else {
         throw new Error(data.error?.message || 'Upload failed');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading image:', error);
-      alert('Error al subir la imagen. Asegúrate de que Cloudinary esté configurado.');
+      alert('Error al subir la imagen. Por favor, inténtalo de nuevo.');
     } finally {
       setUploading(false);
     }

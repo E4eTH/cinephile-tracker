@@ -2,9 +2,18 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /media/{documentId} {
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      function isValidMedia() {
+        let data = request.resource.data;
+        return data.userId == request.auth.uid &&
+               data.title is string && data.title.size() < 200 &&
+               data.type in ['movie', 'series'] &&
+               (data.status in ['plan_to_watch', 'watching', 'completed', 'dropped']);
+      }
+
+      allow create: if request.auth != null && isValidMedia();
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null && isValidMedia() && resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
   }
 }

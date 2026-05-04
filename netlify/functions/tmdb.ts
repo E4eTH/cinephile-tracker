@@ -12,6 +12,14 @@ export const handler: Handler = async (event) => {
     };
   }
 
+  // Basic security check for endpoint
+  if (endpoint.includes('..') || endpoint.startsWith('/') || !/^[a-zA-Z0-9_/]+$/.test(endpoint)) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Invalid endpoint format' }),
+    };
+  }
+
   if (!apiKey) {
     return {
       statusCode: 500,
