@@ -39,6 +39,7 @@ import { MediaItem, WatchStatus } from '../types';
 import AddMediaModal from '../components/AddMediaModal';
 import MediaDetailsModal from '../components/MediaDetailsModal';
 import MediaCard from '../components/MediaCard';
+import SettingsModal from '../components/SettingsModal';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, query, orderBy, where } from 'firebase/firestore';
@@ -55,6 +56,7 @@ export default function Library() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MediaItem | null>(null);
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -462,6 +464,13 @@ export default function Library() {
         item={selectedItem}
       />
 
+      <SettingsModal
+        open={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        user={user}
+        items={items}
+      />
+
       <Menu
         anchorEl={anchorEl}
         open={menuOpen}
@@ -511,7 +520,12 @@ export default function Library() {
           </Typography>
         </Box>
         <Divider sx={{ my: 0.5, borderColor: 'rgba(255,255,255,0.05)' }} />
-        {/* Perfil and Ajustes options removed */}
+        <MenuItem onClick={() => setIsSettingsModalOpen(true)}>
+          <ListItemIcon sx={{ minWidth: 'auto !important' }}>
+            <SettingsIcon fontSize="small" color="primary" />
+          </ListItemIcon>
+          <ListItemText primary="Ajustes" />
+        </MenuItem>
         <Divider sx={{ my: 0.5, borderColor: 'rgba(255,255,255,0.05)' }} />
         <MenuItem onClick={handleLogout} sx={{ color: '#ff4d4d !important', '&:hover': { bgcolor: 'rgba(255, 77, 77, 0.1) !important' } }}>
           <ListItemIcon sx={{ minWidth: 'auto !important' }}>

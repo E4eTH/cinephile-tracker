@@ -40,6 +40,8 @@ export default function AddMediaModal({ open, onClose, onSave, initialData }: Ad
     tmdbId: number | null;
     season: number | string;
     episode: number | string;
+    runtime: number;
+    genres: string[];
   }>({
     title: '',
     type: 'movie',
@@ -49,13 +51,19 @@ export default function AddMediaModal({ open, onClose, onSave, initialData }: Ad
     imageUrl: '',
     tmdbId: null,
     season: 1,
-    episode: 1
+    episode: 1,
+    runtime: 0,
+    genres: []
   });
 
   const [openSearch, setOpenSearch] = useState(false);
   const [options, setOptions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [seasonsList, setSeasonsList] = useState<any[]>([]);
+  const [episodesList, setEpisodesList] = useState<any[]>([]);
+  const [loadingSeasons, setLoadingSeasons] = useState(false);
+  const [loadingEpisodes, setLoadingEpisodes] = useState(false);
 
   // Reset form when modal opens or initialData changes
   React.useEffect(() => {
@@ -70,7 +78,9 @@ export default function AddMediaModal({ open, onClose, onSave, initialData }: Ad
           imageUrl: initialData.imageUrl || '',
           tmdbId: initialData.tmdbId || null,
           season: initialData.season || 1,
-          episode: initialData.episode || 1
+          episode: initialData.episode || 1,
+          runtime: initialData.runtime || 0,
+          genres: initialData.genres || []
         });
       } else {
         setFormData({
@@ -82,13 +92,84 @@ export default function AddMediaModal({ open, onClose, onSave, initialData }: Ad
           imageUrl: '',
           tmdbId: null,
           season: 1,
-          episode: 1
+          episode: 1,
+          runtime: 0,
+          genres: []
         });
       }
       setSearchQuery('');
       setOptions([]);
+
+      // If editing and runtime/genres are missing but we have tmdbId, fetch them
+      if (initialData?.tmdbId && (!initialData.runtime || !initialData.genres?.length)) {
+        const repairData = async () => {
+          try {
+            const endpoint = initialData.type === 'movie' ? `movie/${initialData.tmdbId}` : `tv/${initialData.tmdbId}`;
+            const response = await fetch(`/.netlify/functions/tmdb?endpoint=${endpoint}&language=es-ES`);
+            const details = await response.json();
+            
+            const runtime = initialData.type === 'movie' 
+              ? (details.runtime || 120) 
+              : (details.episode_run_time?.[0] || 45);
+            
+            const genres = details.genres?.map((g: any) => g.name) || [];
+            
+            setFormData(prev => ({
+              ...prev,
+              runtime,
+              genres
+            }));
+          } catch (e) {
+            console.error("Error repairing data:", e);
+          }
+        };
+        repairData();
+      }
     }
   }, [open, initialData]);
+
+  const fetchSeasons = async (id: number) => {
+    setLoadingSeasons(true);
+    try {
+      const response = await fetch(`/.netlify/functions/tmdb?endpoint=tv/${id}&language=es-ES`);
+      const data = await response.json();
+      setSeasonsList(data.seasons || []);
+    } catch (error) {
+      console.error("Error fetching seasons:", error);
+    } finally {
+      setLoadingSeasons(false);
+    }
+  };
+
+  const fetchEpisodes = async (tvId: number, seasonNum: number) => {
+    setLoadingEpisodes(true);
+    try {
+      const response = await fetch(`/.netlify/functions/tmdb?endpoint=tv/${tvId}/season/${seasonNum}&language=es-ES`);
+      const data = await response.json();
+      setEpisodesList(data.episodes || []);
+    } catch (error) {
+      console.error("Error fetching episodes:", error);
+    } finally {
+      setLoadingEpisodes(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (formData.type === 'series' && formData.tmdbId) {
+      fetchSeasons(formData.tmdbId);
+    } else {
+      setSeasonsList([]);
+      setEpisodesList([]);
+    }
+  }, [formData.tmdbId, formData.type]);
+
+  React.useEffect(() => {
+    if (formData.type === 'series' && formData.tmdbId && formData.season) {
+      fetchEpisodes(formData.tmdbId, Number(formData.season));
+    } else {
+      setEpisodesList([]);
+    }
+  }, [formData.season, formData.tmdbId, formData.type]);
 
   React.useEffect(() => {
     let active = true;
@@ -221,13 +302,39 @@ export default function AddMediaModal({ open, onClose, onSave, initialData }: Ad
                       setFormData(prev => ({ ...prev, title: newInputValue }));
                     }
                   }}
-                  onChange={(_, newValue) => {
+                  onChange={async (_, newValue) => {
                     if (newValue && typeof newValue !== 'string') {
                       const title = formData.type === 'movie' ? (newValue.title || newValue.original_title) : (newValue.name || newValue.original_name);
                       const imageUrl = newValue.poster_path ? `https://image.tmdb.org/t/p/w500${newValue.poster_path}` : '';
-                      setFormData({ ...formData, title: title || '', imageUrl, tmdbId: newValue.id });
+                      
+                      setLoading(true);
+                      try {
+                        const endpoint = formData.type === 'movie' ? `movie/${newValue.id}` : `tv/${newValue.id}`;
+                        const response = await fetch(`/.netlify/functions/tmdb?endpoint=${endpoint}&language=es-ES`);
+                        const details = await response.json();
+                        
+                        const runtime = formData.type === 'movie' 
+                          ? (details.runtime || 120) 
+                          : (details.episode_run_time?.[0] || 45);
+                        
+                        const genres = details.genres?.map((g: any) => g.name) || [];
+
+                        setFormData({ 
+                          ...formData, 
+                          title: title || '', 
+                          imageUrl, 
+                          tmdbId: newValue.id,
+                          runtime,
+                          genres
+                        });
+                      } catch (error) {
+                        console.error("Error fetching details:", error);
+                        setFormData({ ...formData, title: title || '', imageUrl, tmdbId: newValue.id });
+                      } finally {
+                        setLoading(false);
+                      }
                     } else {
-                      setFormData({ ...formData, title: '', imageUrl: '', tmdbId: null });
+                      setFormData({ ...formData, title: '', imageUrl: '', tmdbId: null, runtime: 0, genres: [] });
                     }
                   }}
                   renderInput={(params) => (
@@ -266,34 +373,48 @@ export default function AddMediaModal({ open, onClose, onSave, initialData }: Ad
             {formData.type === 'series' && (
               <>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    label="Temporada"
-                    fullWidth
-                    type="number"
-                    value={formData.season}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === '' || Number(val) >= 1) {
-                        setFormData({ ...formData, season: val });
-                      }
-                    }}
-                    slotProps={{ htmlInput: { min: 1 } }}
-                  />
+                  <FormControl fullWidth disabled={loadingSeasons || !formData.tmdbId}>
+                    <InputLabel>Temporada</InputLabel>
+                    <Select
+                      value={formData.season}
+                      label="Temporada"
+                      onChange={(e) => setFormData({ ...formData, season: e.target.value, episode: 1 })}
+                    >
+                      {loadingSeasons ? (
+                        <MenuItem value={formData.season}><CircularProgress size={16} /> Cargando...</MenuItem>
+                      ) : seasonsList.length > 0 ? (
+                        seasonsList.map((s) => (
+                          <MenuItem key={s.id} value={s.season_number}>
+                            Temporada {s.season_number} ({s.episode_count} eps)
+                          </MenuItem>
+                        ))
+                      ) : (
+                        <MenuItem value={formData.season}>Temporada {formData.season}</MenuItem>
+                      )}
+                    </Select>
+                  </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    label="Episodio"
-                    fullWidth
-                    type="number"
-                    value={formData.episode}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === '' || Number(val) >= 1) {
-                        setFormData({ ...formData, episode: val });
-                      }
-                    }}
-                    slotProps={{ htmlInput: { min: 1 } }}
-                  />
+                  <FormControl fullWidth disabled={loadingEpisodes || !formData.tmdbId}>
+                    <InputLabel>Episodio</InputLabel>
+                    <Select
+                      value={formData.episode}
+                      label="Episodio"
+                      onChange={(e) => setFormData({ ...formData, episode: e.target.value })}
+                    >
+                      {loadingEpisodes ? (
+                        <MenuItem value={formData.episode}><CircularProgress size={16} /> Cargando...</MenuItem>
+                      ) : episodesList.length > 0 ? (
+                        episodesList.map((e) => (
+                          <MenuItem key={e.id} value={e.episode_number}>
+                            Episodio {e.episode_number}: {e.name}
+                          </MenuItem>
+                        ))
+                      ) : (
+                        <MenuItem value={formData.episode}>Episodio {formData.episode}</MenuItem>
+                      )}
+                    </Select>
+                  </FormControl>
                 </Grid>
               </>
             )}

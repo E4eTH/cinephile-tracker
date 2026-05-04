@@ -13,5 +13,7 @@ export interface MediaItem {
   comment?: string;
   season?: number;
   episode?: number;
+  runtime?: number;
+  genres?: string[];
   createdAt: number;
 }

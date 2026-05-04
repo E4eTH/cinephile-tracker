@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogContent,
   IconButton,
+  Button,
   Box,
   Typography,
   Chip,
@@ -41,17 +42,31 @@ interface TMDBDetails {
   videos?: { results: { type: string; site: string; key: string }[] };
 }
 
+interface EpisodeDetails {
+  overview: string;
+  name: string;
+  still_path?: string;
+  air_date?: string;
+}
+
 export default function MediaDetailsModal({ open, onClose, item }: MediaDetailsModalProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [details, setDetails] = useState<TMDBDetails | null>(null);
+  const [episodeDetails, setEpisodeDetails] = useState<EpisodeDetails | null>(null);
+  const [synopsisType, setSynopsisType] = useState<'general' | 'episode'>('general');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (open && item?.tmdbId) {
       fetchDetails();
+      if (item.type === 'series') {
+        fetchEpisodeDetails();
+      }
     } else {
       setDetails(null);
+      setEpisodeDetails(null);
+      setSynopsisType('general');
     }
   }, [open, item]);
 
@@ -61,13 +76,32 @@ export default function MediaDetailsModal({ open, onClose, item }: MediaDetailsM
     setLoading(true);
     try {
       const endpoint = item.type === 'movie' ? `movie/${item.tmdbId}` : `tv/${item.tmdbId}`;
-      const response = await fetch(`/.netlify/functions/tmdb?endpoint=${endpoint}&append_to_response=videos&language=es-ES`);
+      // Added include_video_language=es,en for better trailer detection
+      const response = await fetch(`/.netlify/functions/tmdb?endpoint=${endpoint}&append_to_response=videos&include_video_language=es,en&language=es-ES`);
       const data = await response.json();
       setDetails(data);
     } catch (error) {
       console.error("Error fetching TMDB details:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEpisodeDetails = async () => {
+    if (!item?.tmdbId || item.type !== 'series') return;
+    
+    try {
+      const season = item.season || 1;
+      const episode = item.episode || 1;
+      const endpoint = `tv/${item.tmdbId}/season/${season}/episode/${episode}`;
+      const response = await fetch(`/.netlify/functions/tmdb?endpoint=${endpoint}&language=es-ES`);
+      const data = await response.json();
+      if (data.overview) {
+        setEpisodeDetails(data);
+        setSynopsisType('episode');
+      }
+    } catch (error) {
+      console.error("Error fetching episode details:", error);
     }
   };
 
@@ -181,29 +215,38 @@ export default function MediaDetailsModal({ open, onClose, item }: MediaDetailsM
                 style={{ width: '100%', height: 'auto', display: 'block' }}
               />
             </Box>
-            {details?.videos?.results?.find(v => v.site === 'YouTube' && v.type === 'Trailer') && (
-              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
-                <IconButton 
-                  component="a" 
-                  href={`https://www.youtube.com/watch?v=${details.videos.results.find(v => v.site === 'YouTube' && v.type === 'Trailer')?.key}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  sx={{ 
-                    bgcolor: 'rgba(99, 102, 241, 0.15)', 
-                    color: '#6366f1', 
-                    borderRadius: 2,
-                    px: 2,
-                    py: 1,
-                    '&:hover': { bgcolor: 'rgba(99, 102, 241, 0.25)' },
-                    border: '1px solid rgba(99, 102, 241, 0.3)',
-                    gap: 1
-                  }}
-                >
-                  <TvIcon fontSize="small" />
-                  <Typography variant="button" sx={{ fontWeight: 700, textTransform: 'none' }}>Ver Trailer</Typography>
-                </IconButton>
-              </Box>
-            )}
+            {(() => {
+              const videos = details?.videos?.results || [];
+              const trailer = videos.find((v: any) => v.site === 'YouTube' && v.type === 'Trailer') || 
+                              videos.find((v: any) => v.site === 'YouTube' && v.type === 'Teaser') ||
+                              videos.find((v: any) => v.site === 'YouTube');
+              
+              if (!trailer) return null;
+
+              return (
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+                  <IconButton 
+                    component="a" 
+                    href={`https://www.youtube.com/watch?v=${trailer.key}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{ 
+                      bgcolor: 'rgba(99, 102, 241, 0.15)', 
+                      color: '#6366f1', 
+                      borderRadius: 2,
+                      px: 2,
+                      py: 1,
+                      '&:hover': { bgcolor: 'rgba(99, 102, 241, 0.25)' },
+                      border: '1px solid rgba(99, 102, 241, 0.3)',
+                      gap: 1
+                    }}
+                  >
+                    <TvIcon fontSize="small" />
+                    <Typography variant="button" sx={{ fontWeight: 700, textTransform: 'none' }}>Ver Trailer</Typography>
+                  </IconButton>
+                </Box>
+              );
+            })()}
           </Box>
 
             {/* Info */}
@@ -294,7 +337,32 @@ export default function MediaDetailsModal({ open, onClose, item }: MediaDetailsM
                 ) : null}
               </Box>
 
-              <Typography variant="subtitle1" sx={{ mb: 0.5, fontWeight: 700 }}>Sinopsis</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  {synopsisType === 'general' ? 'Sinopsis General' : `Sinopsis Ep. ${item.episode || '?'} (${episodeDetails?.name || 'S'+(item.season || '?')+'E'+(item.episode || '?')})`}
+                </Typography>
+                {item.type === 'series' && episodeDetails && (
+                  <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    <Button 
+                      size="small" 
+                      onClick={() => setSynopsisType('general')}
+                      variant={synopsisType === 'general' ? 'contained' : 'text'}
+                      sx={{ minWidth: 'auto', px: 1, py: 0, fontSize: '0.65rem', borderRadius: 1 }}
+                    >
+                      General
+                    </Button>
+                    <Button 
+                      size="small" 
+                      onClick={() => setSynopsisType('episode')}
+                      variant={synopsisType === 'episode' ? 'contained' : 'text'}
+                      sx={{ minWidth: 'auto', px: 1, py: 0, fontSize: '0.65rem', borderRadius: 1 }}
+                    >
+                      Episodio
+                    </Button>
+                  </Box>
+                )}
+              </Box>
+
               {loading ? (
                 <CircularProgress size={20} sx={{ color: 'primary.main' }} />
               ) : (
@@ -304,7 +372,7 @@ export default function MediaDetailsModal({ open, onClose, item }: MediaDetailsM
                     background: 'linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(15, 23, 42, 0.4) 100%)',
                     backdropFilter: 'blur(24px)',
                     borderRadius: '8px',
-                    height: '100px',
+                    height: '120px',
                     overflowY: 'auto',
                     scrollBehavior: 'smooth',
                     p: 2,
@@ -337,7 +405,9 @@ export default function MediaDetailsModal({ open, onClose, item }: MediaDetailsM
                       lineHeight: 1.5,
                     }}
                   >
-                    {details?.overview || item.comment || 'No hay sinopsis disponible.'}
+                    {synopsisType === 'general' 
+                      ? (details?.overview || item.comment || 'No hay sinopsis disponible.')
+                      : (episodeDetails?.overview || details?.overview || 'No hay sinopsis disponible para este episodio.')}
                   </Typography>
                 </Box>
               )}
