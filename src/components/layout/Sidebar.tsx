@@ -22,18 +22,18 @@ interface SidebarProps {
   onUserClick: (event: React.MouseEvent<HTMLElement>) => void;
 }
 
-const NavItem = ({ 
-  icon: Icon, 
-  label, 
-  view, 
-  activeView, 
-  onClick 
-}: { 
-  icon: any, 
-  label: string, 
-  view: 'all' | WatchStatus, 
-  activeView: string, 
-  onClick: () => void 
+const NavItem = ({
+  icon: Icon,
+  label,
+  view,
+  activeView,
+  onClick
+}: {
+  icon: any,
+  label: string,
+  view: 'all' | WatchStatus,
+  activeView: string,
+  onClick: () => void
 }) => (
   <Box
     onClick={onClick}
